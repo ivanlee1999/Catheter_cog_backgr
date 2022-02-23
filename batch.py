@@ -32,6 +32,7 @@ def contactPoint(catheter_point, contour_image, threshold):
     contact_points = []
     distance_to_vessel = []
     contact_index = []
+    contact_list = np.zeros_like(catheter_point)
     for point in catheter_point:
         blank = np.zeros((height, length))
         radius = 2
@@ -44,6 +45,7 @@ def contactPoint(catheter_point, contour_image, threshold):
                 for j in range(np.max([0,point[1] - radius]), np.min([length, point[1] + radius])):
                     if(blank[i][j] == 255 and contour_image[i][j] == 255):
                         contact = True
+                        
             radius +=1
         distance_to_vessel.append(radius)
         print(radius)
@@ -109,7 +111,7 @@ def catheterExtraction(filename, mask, threshold):
 def catheterPoints(contour, mask, radius):
     height = np.shape(contour)[0]
     length = np.shape(contour)[1]
-    contour[:][0] = 0
+    contour[:,0] = 0
     for i in reversed(range(np.shape(contour)[0])):
         if contour[i][1] == 255:
             start = [i,1]
@@ -134,13 +136,13 @@ def catheterPoints(contour, mask, radius):
 def saveData(filename):    
     mask =cv2.imread('vessel_mask.jpg')
     # filename = 'insert4.jpg'
-    contour= catheterExtraction(filename, mask, threshold=75)
+    contour= catheterExtraction(filename, mask, threshold=80)
 
     points = catheterPoints(contour, mask, radius=5)
     mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
     mask = 255 - mask
     contacted_point, contacted_point_index = contactPoint(points, mask,10)
-    curvatures = curvature(points)
+    # curvatures = curvature(points)
     insert = cv2.imread(filename)
 
     for i in points:
@@ -151,7 +153,7 @@ def saveData(filename):
 
 
     print(points)
-    print(curvatures)
+    # print(curvatures)
     print(contacted_point_index)
 
     position = np.asarray(points)
@@ -160,7 +162,7 @@ def saveData(filename):
 
     print(x_position)
 
-    return x_position, y_position, curvatures, insert
+    return x_position, y_position, insert, contacted_point_index
 
 
 
@@ -180,10 +182,10 @@ allCurvatures = []
 folderPath  = '/Users/yifan_li/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code/Python/CV/data1'
 pic_list = os.listdir(folderPath)
 pic_list = np.sort(pic_list)
-for i in pic_list[2:10]:
+for i in pic_list[2:]:
     filename = folderPath + '/' + i
     print(filename)
-    x,y,c,image = saveData(filename)
+    x,y,image,c = saveData(filename)
     x_positions.append(x)
     y_positions.append(x)
     allCurvatures.append(c)
@@ -191,17 +193,28 @@ for i in pic_list[2:10]:
     print(newImage_name)
     cv2.imwrite(newImage_name, image)
     
+    print(x)
+    with open('x_position.csv', 'a') as x_list:
+        write_x = csv.writer(x_list)
+        write_x.writerow(x)
+    with open('y_position.csv', 'a') as y_list:
+        write_y = csv.writer(y_list)
+        write_y.writerow(y)
+    with open('contact.csv', 'a') as c_list:
+        write_c = csv.writer(c_list)
+        write_c.writerow(c)
+
     
     
-with open('x_position.csv', 'a') as x_list:
-    write_x = csv.writer(x_list)
-    write_x.writerows(x_positions)
-with open('y_position.csv', 'a') as y_list:
-    write_y = csv.writer(y_list)
-    write_y.writerows(y_positions)
-with open('curvature.csv', 'a') as c_list:
-    write_c = csv.writer(c_list)
-    write_c.writerows(allCurvatures)
+# with open('x_position.csv', 'a') as x_list:
+#     write_x = csv.writer(x_list)
+#     write_x.writerows(x_positions)
+# with open('y_position.csv', 'a') as y_list:
+#     write_y = csv.writer(y_list)
+#     write_y.writerows(y_positions)
+# with open('curvature.csv', 'a') as c_list:
+#     write_c = csv.writer(c_list)
+#     write_c.writerows(allCurvatures)
 
 
     
